@@ -4,7 +4,7 @@ import math
 import sklearn.model_selection
 import matplotlib.pyplot as plt
 
-#Load the house votes data file using python csv module
+# load the house votes data file using python csv module
 data = pd.read_csv('house_votes_84.csv')
 dataCols = data.columns.tolist()
 
@@ -115,11 +115,6 @@ def cart(dataAttr, colAttr):
             finalAttr = attribute
     # return the best attribute and the gini index
     return finalAttr, minGini
-
-# function returns the attribute to split the data and the corresponding metric value
-# data: list containing data set; collAttr: list containing column attributes; algor: string indicating algorithm being used
-def algorSplitAttr(data, colAttr, algor):
-    return id3(data, colAttr) if algor == "id3" else cart(data, colAttr)
     
 ###############################################################################################################################################
 
@@ -148,7 +143,9 @@ def decisiontree(data, colAttr, algor):
         return node
 
     # find best attribute to split on using specified algorithm
-    bestAttr = algorSplitAttr(data, colAttr, algor)[0]
+    # returns the attribute to split the data and the corresponding metric value
+    splitDataAlgor = id3(data, colAttr) if algor == "id3" else cart(data, colAttr)
+    bestAttr = splitDataAlgor[0]
     # set test class and index of best attribute
     node.testClass, bestAttrIdx = bestAttr, colAttr.index(bestAttr)
     # new list of attributes without best attribute

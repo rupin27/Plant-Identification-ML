@@ -24,13 +24,6 @@ def split(data, ranNum):
 
 # Normalization Helper Functions
 
-# Normalize a column of data using the maximum and minimum values
-# col: column to be normalized; maxVal: maximum value in the column; minVal: minimum value in the column, resArr: resulting normalized array
-def normalizationMaxMin(col, maxVal, minVal):
-    # iterate through the list and normalize each value
-    resArr = [(val - minVal) / (maxVal - minVal) for val in col] 
-    return resArr
-
 # Normalize a column of data
 # col: column to be normalized; resArr: resulting normalized array
 def normalization(col):
@@ -54,7 +47,7 @@ def normalizedDataset(trainData, testData):
         if i < 4:
             trainArr, trainMin, trainMax = normalization(col)
             # Normalize the testing data for the current column using the minimum and maximum values from the training data
-            testArr = normalizationMaxMin(testData[i], trainMax, trainMin)
+            testArr = [(val - trainMin) / (trainMax - trainMin) for val in testData[i]] 
             trainKnnNorm.append(trainArr)
             testKnnNorm.append(testArr)
             i += 1
@@ -133,8 +126,8 @@ def accuracyTrainData(k, randNum, data):
     # split the dataset
     trainknn, testknn = split(data, randNum)
     #normalize the dataset (comment out for Q1.6 to test on unnormalized data)
-    # normedtrain, normedtest = normflow(trainknn, testknn)
-    normedtrain, normedtest = trainknn, testknn
+    normedtrain, normedtest = normflow(trainknn, testknn)
+    # normedtrain, normedtest = trainknn, testknn
     # predict labels for the training set using the knn function with k nearest neighbors
     predictedLables, correctLables = knn(k, normedtrain, normedtrain)
     calcAccuracy = accuracy(predictedLables, correctLables)
@@ -146,8 +139,8 @@ def accuracyTestData(k, randNum, data):
     # split the dataset
     trainknn, testknn = split(data, randNum)
     #normalize the dataset (comment out for Q1.6 to test on unnormalized data)
-    # normedtrain, normedtest = normflow(trainknn, testknn)
-    normedtrain, normedtest = trainknn, testknn
+    normedtrain, normedtest = normflow(trainknn, testknn)
+    # normedtrain, normedtest = trainknn, testknn
     # predict labels for the testing set using the knn function with k nearest neighbors
     predictedLables, correctLables = knn(k, normedtrain, normedtest)
     calcAccuracy = accuracy(predictedLables, correctLables)
@@ -245,6 +238,7 @@ plt.xlabel("K value")
 plt.ylabel("Accuracy")
 plt.show()
 
+###############################################################################################################################################
 # WITH NORMALIZATION:
 
 # KNN accuracy for training set
@@ -302,3 +296,4 @@ plt.show()
 #  0.03944053 0.04203173 0.03636237 0.03840573 0.04579544 0.04725816
 #  0.04533824 0.04627814]
 
+###############################################################################################################################################

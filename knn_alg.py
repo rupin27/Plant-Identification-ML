@@ -20,72 +20,65 @@ def split(data, ranNum):
     trainKnn, testKnn = sklearn.model_selection.train_test_split(data, train_size = 0.8, test_size = 0.2, shuffle = True, random_state = ranNum)
     return trainKnn, testKnn
 
-###############################################################################################################################################
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Normalization Helper Functions
 
 # Normalize a column of data
-# col: column to be normalized; resArr: resulting normalized array
-def normalization(col):
-    minVal = min(col)
-    maxVal = max(col)
+# column: column to be normalized; resArr: resulting normalized array
+def normalizeCol(column):
+    minVal = min(column)
+    maxVal = max(column)
     # iterate through the list and normalize each value
-    resArr = [(val - minVal) / (maxVal - minVal) for val in col]
+    resArr = [(val - minVal) / (maxVal - minVal) for val in column]
     return resArr, minVal, maxVal
 
 # Normalize the training and testing datasets using the maximum and minimum values
 # trainData: training dataset; testData: the testing dataset
 def normalizedDataset(trainData, testData):
-    trainKnnNorm = []
-    testKnnNorm = []
-    i = 0
-    # Loop through each column in the training dataset
-    for col in trainData:
-        trainArr = []
-        testArr = []
-        # Check if the current column is a feature column (i.e. columns 0-3)
-        if i < 4:
-            trainArr, trainMin, trainMax = normalization(col)
-            # Normalize the testing data for the current column using the minimum and maximum values from the training data
-            testArr = [(val - trainMin) / (trainMax - trainMin) for val in testData[i]] 
-            trainKnnNorm.append(trainArr)
-            testKnnNorm.append(testArr)
-            i += 1
+    trainKnnNorm, testKnnNorm = [], []
+    colInx = 0
+    # check if the current column is a feature column (i.e. columns 0-3)
+    while colInx < 4:
+        # Normalize the testing data for the current column using the minimum and maximum values from the training data
+        trainArr, trainMin, trainMax = normalizeCol(trainData[colInx])
+        # Loop through each column in the training dataset
+        testArr = [(val - trainMin) / (trainMax - trainMin) for val in testData[colInx]] 
+        trainKnnNorm.append(trainArr)
+        testKnnNorm.append(testArr)
+        colInx += 1
     # Append the unnormalized labels (i.e. the species column) to the normalized training and testing datasets
     trainKnnNorm.append(trainData[4])
     testKnnNorm.append(testData[4])
+    
     return trainKnnNorm, testKnnNorm
 
-# Transpose a 2D array
-# arr: array to be transposed
-def transpose(arr):
-    return [list(row) for row in zip(*arr)]
-
-###############################################################################################################################################
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Normalize the training and testing datasets
 # trainData: the training dataset; testData: the testing dataset
-def normflow(trainData, testData):
+def getNormData(trainData, testData):
     # transpose the training and testing datasets
-    ttrainData = transpose(trainData)
-    ttestData = transpose(testData)
+    trnspTrain = [list(row) for row in zip(*trainData)]
+    trnspTest = [list(row) for row in zip(*testData)]
     # normalize the transposed data
-    normttrainData, normttestData = normalizedDataset(ttrainData, ttestData)
+    normTrnspTrain, normTrnspTest = normalizedDataset(trnspTrain, trnspTest)
     # transpose the normalized training and testing datasets back to their original format
-    resNormTrain, resNormTest = transpose(normttrainData), transpose(normttestData)
+    resNormTrain, resNormTest = [list(row) for row in zip(*normTrnspTrain)], [list(row) for row in zip(*normTrnspTest)]
     return resNormTrain, resNormTest
-
-# Euclidean distance
-# Compute the elcudidean distance between two arrays
-def euclideanDist(arr1, arr2):
-    arr1 = np.array(arr1)
-    arr2 = np.array(arr2)
-    dist = np.linalg.norm(arr1 - arr2)
-    return dist
 
 # Computethe Euclidean distance between a test data point and all the training data points
 # testDataPt: test data point; trainDataPt: a list of training data points
 def distanceCalc(testDataPt, trainDataPts):
+
+    # Euclidean distance
+    # Compute the elcudidean distance between two arrays
+    def euclideanDist(arr1, arr2):
+        arr1 = np.array(arr1)
+        arr2 = np.array(arr2)
+        dist = np.linalg.norm(arr1 - arr2)
+        return dist
+
     # feature values of the test data point
     pt1 = testDataPt[:-1]
     # calculate the Euclidean distance between the test data point and all the training data points
@@ -93,22 +86,24 @@ def distanceCalc(testDataPt, trainDataPts):
     # return distances in ascending order
     return sorted(distArr, key=itemgetter(0))
 
-###############################################################################################################################################
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 #KNN Helper Functions
 
 # k-nearest neighbours algorithm
 # k: number of nearest neighbours being considered; trainData: training data set; testData: testing data set
-def knn(k, trainData, testData):
+def knnAlgor(k, trainData, testData):
     predictedLables = []
     # extract the true labels for test data and store them in a separate list
-    correctLables = [col[-1] for col in testData]
+    correctLables = [column[-1] for column in testData]
     for datpt in testData:
-        distlist = distanceCalc(datpt, trainData)
+        distArr = distanceCalc(datpt, trainData)
         # extract the labels of the k nearest neighbours
-        catlist = [col[1] for col in distlist[:k]]
+        labelsArr = [column[1] for column in distArr[:k]]
         # predict the label of the test data point based on the majority label of k nearest neighbours
-        predictedLables.append(max(set(catlist), key=catlist.count))
+        predictedLables.append(max(set(labelsArr), key=labelsArr.count))
     return predictedLables, correctLables
+    
 
 # accuracy of the predicted labels generated by the knn function above
 # predicted: predicted labels for test data points; correct: correct labels for test data points
@@ -118,7 +113,7 @@ def accuracy(predicted, correct):
     correctLables = sum(1 for i in range(total) if predicted[i] == correct[i])
     return correctLables / total
 
-###############################################################################################################################################
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # performs k-fold cross-validation to test the accuracy of the knn() function using a given value of k on the training dataset.
 # k = number of neighbours; randNum: number used to split dataset; data: iris data
@@ -126,10 +121,10 @@ def accuracyTrainData(k, randNum, data):
     # split the dataset
     trainknn, testknn = split(data, randNum)
     #normalize the dataset (comment out for Q1.6 to test on unnormalized data)
-    normedtrain, normedtest = normflow(trainknn, testknn)
+    normedtrain, normedtest = getNormData(trainknn, testknn)
     # normedtrain, normedtest = trainknn, testknn
     # predict labels for the training set using the knn function with k nearest neighbors
-    predictedLables, correctLables = knn(k, normedtrain, normedtrain)
+    predictedLables, correctLables = knnAlgor(k, normedtrain, normedtrain)
     calcAccuracy = accuracy(predictedLables, correctLables)
     return calcAccuracy
 
@@ -139,56 +134,49 @@ def accuracyTestData(k, randNum, data):
     # split the dataset
     trainknn, testknn = split(data, randNum)
     #normalize the dataset (comment out for Q1.6 to test on unnormalized data)
-    normedtrain, normedtest = normflow(trainknn, testknn)
+    normedtrain, normedtest = getNormData(trainknn, testknn)
     # normedtrain, normedtest = trainknn, testknn
     # predict labels for the testing set using the knn function with k nearest neighbors
-    predictedLables, correctLables = knn(k, normedtrain, normedtest)
+    predictedLables, correctLables = knnAlgor(k, normedtrain, normedtest)
     calcAccuracy = accuracy(predictedLables, correctLables)
     return calcAccuracy
 
 # performs statistical analysis on the accuracy of the knn() function using a range of k values on a dataset
 #  data: iris data set
 def statAnalysisAccTrain(data):
-    k = 1
     # list to store the results for each k value
     caclKVals = []
-    while k <= 51:
-        randNum = 12100
+    # varying k from 1 to 51, using only odd numbers
+    for k in range(1, 52, 2):
         # empty list to store the accuracy results for each random seed
         calcAccVals = []
-        while randNum < 12200:
+        # for each value of k, run the process 20 times.
+        for randNum in range(12100, 12200, 5):
             # calculate the accuracy of the knn function using k-fold cross-validation with a given k value and random seed value
             calcAccVals.append(accuracyTrainData(k, randNum, data))
-            # for each value of k, run the process 20 times.
-            randNum += 5
         caclKVals.append(calcAccVals)
-        # varying k from 1 to 51, using only odd numbers
-        k+=2
     
     return np.array(caclKVals)
 
 # performs statistical analysis on the accuracy of the knn() function using a range of k values on a dataset
 #  data: iris data set
 def statAnalysisAccTest(data):
-    k = 1
     # list to store the results for each k value
     caclKVals = []
-    while k <= 51:
-        randNum = 12100
+    # varying k from 1 to 51, using only odd numbers
+    for k in range(1, 52, 2):
         # empty list to store the accuracy results for each random seed
         calcAccVals = []
-        while randNum < 12200:
+        # for each value of k, run the process 20 times.
+        for randNum in range(12100, 12200, 5):
             # calculate the accuracy of the knn function using k-fold cross-validation with a given k value and random seed value
             calcAccVals.append(accuracyTestData(k, randNum, data))
-            # for each value of k, run the process 20 times.
-            randNum += 5 
         # append the accuracy results for the current k value to the result list
         caclKVals.append(calcAccVals)
-        # varying k from 1 to 51, using only odd numbers
-        k += 2
+    
     return np.array(caclKVals)
 
-###############################################################################################################################################
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # NumPy array k that contains odd integer values from 1 to 51 
 k = np.arange(1,52,2)
@@ -230,15 +218,10 @@ plt.xlabel("K value")
 plt.ylabel("Accuracy")
 plt.show()
 
-plt.errorbar(k, accValsTrain, yerr = stdValsTrain, fmt = "-o", color = 'green', alpha = 0.5, label= "Train")
-plt.errorbar(k, accValsTest, yerr = stdValsTest, fmt = "-o", color = 'red', alpha = 0.5, label= "Test")
-plt.legend()
-plt.title("KNN on Testing vs. Training Data")
-plt.xlabel("K value")
-plt.ylabel("Accuracy")
-plt.show()
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-###############################################################################################################################################
+# RESULTS FOR ANALYSIS
+
 # WITH NORMALIZATION:
 
 # KNN accuracy for training set
@@ -296,4 +279,4 @@ plt.show()
 #  0.03944053 0.04203173 0.03636237 0.03840573 0.04579544 0.04725816
 #  0.04533824 0.04627814]
 
-###############################################################################################################################################
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------

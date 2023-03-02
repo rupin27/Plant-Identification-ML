@@ -197,6 +197,7 @@ def boolPred(tree: descisionTreeClass, instance):
     # Recursively call the function with the next tree node and the same instance of data.
     return boolPred(tree.nodeEdges[instance[tClassIdx]], instance)
 
+
 # calculates the accuracy of a decision tree model on a given dataset
 # data: string indicating whether to use train or test data; algorithm: string indicating the decision tree algorithm to use; ranNum: integer used for generating random splits
 def accuracy(data, algorithm, ranNum):

@@ -1,20 +1,20 @@
+import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import sklearn.model_selection
 from operator import itemgetter
-import csv
 
-#Load the Iris data file using python csv module
+# load the iris data file 
 data = open('iris.csv')
 dataReader = csv.reader(data)
 
-# irisData: List to hold the iris data
+# irisData: list to hold the iris data
 irisData = []
 for row in dataReader:
     irisData.append([float(row[0]), float(row[1]), float(row[2]), float(row[3]), row[4]])
 
-# Split the data into training and testing sets
-# The training set will contain 80% of the data, the testing set will contain 20% of the data
+# split the data into training and testing sets
+# the training set will contain 80% of the data, the testing set will contain 20% of the data
 # data: file data; ranNum: ensures reproducibilty; trainKnn: resulting data set for training; testKnn: resulting data set for testing 
 def split(data, ranNum):
     trainKnn, testKnn = sklearn.model_selection.train_test_split(data, train_size = 0.8, test_size = 0.2, shuffle = True, random_state = ranNum)
@@ -22,38 +22,39 @@ def split(data, ranNum):
 
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-# Normalization Helper Functions
+# Normalization Section
 
-# Normalize a column of data
-# column: column to be normalized; resArr: resulting normalized array
-def normalizeCol(column):
-    minVal = min(column)
-    maxVal = max(column)
-    # iterate through the list and normalize each value
-    resArr = [(val - minVal) / (maxVal - minVal) for val in column]
-    return resArr, minVal, maxVal
-
-# Normalize the training and testing datasets using the maximum and minimum values
+# normalize the training and testing datasets using the maximum and minimum values
 # trainData: training dataset; testData: the testing dataset
 def normalizedDataset(trainData, testData):
+
+    # normalize a column of data
+    # column: column to be normalized; resArr: resulting normalized array
+    def normalizeCol(column):
+        minVal = min(column)
+        maxVal = max(column)
+        # iterate through the list and normalize each value
+        resArr = [(val - minVal) / (maxVal - minVal) for val in column]
+        return resArr, minVal, maxVal
+    
     trainKnnNorm, testKnnNorm = [], []
     colInx = 0
     # check if the current column is a feature column (i.e. columns 0-3)
     while colInx < 4:
-        # Normalize the testing data for the current column using the minimum and maximum values from the training data
+        # normalize the testing data for the current column using the min and max vals from the training data
         trainArr, trainMin, trainMax = normalizeCol(trainData[colInx])
-        # Loop through each column in the training dataset
+        # loop through each column in the training dataset
         testArr = [(val - trainMin) / (trainMax - trainMin) for val in testData[colInx]] 
         trainKnnNorm.append(trainArr)
         testKnnNorm.append(testArr)
         colInx += 1
-    # Append the unnormalized labels (i.e. the species column) to the normalized training and testing datasets
+    # append the class labels to the normalized training and testing datasets
     trainKnnNorm.append(trainData[4])
     testKnnNorm.append(testData[4])
     
     return trainKnnNorm, testKnnNorm
 
-# Normalize the training and testing datasets
+# normalize the training and testing datasets
 # trainData: the training dataset; testData: the testing dataset
 def getNormData(trainData, testData):
     # transpose the training and testing datasets
@@ -67,9 +68,9 @@ def getNormData(trainData, testData):
 
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-# KNN
+# KNN Section
 
-# Computethe Euclidean distance between a test data point and all the training data points
+# compute the euclidean distance between a test data point and all the training data points
 # testDataPt: test data point; trainDataPt: a list of training data points
 def distanceCalc(testDataPt, trainDataPts):
 
@@ -82,9 +83,9 @@ def distanceCalc(testDataPt, trainDataPts):
         return dist
 
     # feature values of the test data point
-    pt1 = testDataPt[:-1]
+    point = testDataPt[:-1]
     # calculate the Euclidean distance between the test data point and all the training data points
-    distArr = [(euclideanDist(pt1, elem[:-1]), elem[-1]) for elem in trainDataPts]
+    distArr = [(euclideanDist(point, elem[:-1]), elem[-1]) for elem in trainDataPts]
     # return distances in ascending order
     return sorted(distArr, key=itemgetter(0))
 
@@ -101,46 +102,36 @@ def knnAlgor(k, trainData, testData):
         # predict the label of the test data point based on the majority label of k nearest neighbours
         predictedLables.append(max(set(labelsArr), key=labelsArr.count))
     return predictedLables, correctLables
-    
-# accuracy of the predicted labels generated by the knn function above
-# predicted: predicted labels for test data points; correct: correct labels for test data points
-def accuracy(predicted, correct):
-    total = len(predicted)
-    # count the number of correct predictions
-    correctLables = sum(1 for i in range(total) if predicted[i] == correct[i])
-    return correctLables / total
 
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-# performs k-fold cross-validation to test the accuracy of the knn() function using a given value of k on the training dataset.
-# k = number of neighbours; randNum: number used to split dataset; data: iris data
-def accuracyTrainData(k, randNum, data):
+# Accuracy Section
+
+# performs k-fold cross-validation to test the accuracy of the knn() function using a given value of k on the dataset.
+# k = number of neighbours; randNum: number used to split dataset; data: iris data; train: bool to indicate the type of dataset
+def accuracyData(k, randNum, data, train=True):
+
+    # accuracy of the predicted labels generated by the knn function above
+    # predicted: predicted labels for test data points; correct: correct labels for test data points
+    def accuracy(predicted, correct):
+        total = len(predicted)
+        # count the number of correct predictions
+        correctLables = sum(1 for i in range(total) if predicted[i] == correct[i])
+        return correctLables / total
+    
     # split the dataset
     trainknn, testknn = split(data, randNum)
     #normalize the dataset (comment out for Q1.6 to test on unnormalized data)
     normedtrain, normedtest = getNormData(trainknn, testknn)
     # normedtrain, normedtest = trainknn, testknn
     # predict labels for the training set using the knn function with k nearest neighbors
-    predictedLables, correctLables = knnAlgor(k, normedtrain, normedtrain)
-    calcAccuracy = accuracy(predictedLables, correctLables)
-    return calcAccuracy
-
-# performs k-fold cross-validation to test the accuracy of the knn() function using a given value of k on the testing dataset.
-# k = number of neighbours; randNum: number used to split dataset; data: iris data
-def accuracyTestData(k, randNum, data):
-    # split the dataset
-    trainknn, testknn = split(data, randNum)
-    #normalize the dataset (comment out for Q1.6 to test on unnormalized data)
-    normedtrain, normedtest = getNormData(trainknn, testknn)
-    # normedtrain, normedtest = trainknn, testknn
-    # predict labels for the testing set using the knn function with k nearest neighbors
-    predictedLables, correctLables = knnAlgor(k, normedtrain, normedtest)
+    predictedLables, correctLables = knnAlgor(k, normedtrain, normedtrain) if train == True else knnAlgor(k, normedtrain, normedtest)
     calcAccuracy = accuracy(predictedLables, correctLables)
     return calcAccuracy
 
 # performs statistical analysis on the accuracy of the knn() function using a range of k values on a dataset
-#  data: iris data set
-def statAnalysisAccTrain(data):
+#  data: iris data set; train: bool to indicate the type of dataset
+def statAnalysisAcc(data, train=True):
     # list to store the results for each k value
     caclKVals = []
     # varying k from 1 to 51, using only odd numbers
@@ -150,37 +141,27 @@ def statAnalysisAccTrain(data):
         # for each value of k, run the process 20 times.
         for randNum in range(12100, 12200, 5):
             # calculate the accuracy of the knn function using k-fold cross-validation with a given k value and random seed value
-            calcAccVals.append(accuracyTrainData(k, randNum, data))
-        caclKVals.append(calcAccVals)
-    
-    return np.array(caclKVals)
-
-# performs statistical analysis on the accuracy of the knn() function using a range of k values on a dataset
-#  data: iris data set
-def statAnalysisAccTest(data):
-    # list to store the results for each k value
-    caclKVals = []
-    # varying k from 1 to 51, using only odd numbers
-    for k in range(1, 52, 2):
-        # empty list to store the accuracy results for each random seed
-        calcAccVals = []
-        # for each value of k, run the process 20 times.
-        for randNum in range(12100, 12200, 5):
-            # calculate the accuracy of the knn function using k-fold cross-validation with a given k value and random seed value
-            calcAccVals.append(accuracyTestData(k, randNum, data))
+            if train:
+                calcAccVals.append(accuracyData(k, randNum, data, train=True))
+            else:
+                calcAccVals.append(accuracyData(k, randNum, data, train=False))
         # append the accuracy results for the current k value to the result list
         caclKVals.append(calcAccVals)
-    
+
     return np.array(caclKVals)
 
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Plot Section 
 
 # NumPy array k that contains odd integer values from 1 to 51 
 k = np.arange(1,52,2)
 
 #RESULTS
-kValsTrain = statAnalysisAccTrain(irisData)
-kValsTest = statAnalysisAccTest(irisData)
+#train
+kValsTrain = statAnalysisAcc(irisData, train=True) 
+#test
+kValsTest = statAnalysisAcc(irisData, train=False)
 
 #Accuracy for training dataset
 accValsTrain = kValsTrain.mean(axis=1)

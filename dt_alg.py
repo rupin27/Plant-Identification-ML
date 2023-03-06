@@ -29,13 +29,13 @@ def calcID3(dataAttr, colAttr):
 
     # takes a column of data as input and returns the entropy of the column
     # column: the column of data being analyzed
-    def id3EntropyCalc(column):
+    def id3EntropyCalc(datColumn):
         # initialize a dictionary to count the occurrences of each value in the input column
         cnts = {}
-        for val in column:
+        for val in datColumn:
             cnts[val] = cnts.get(val, 0) + 1
         # calculate entropy
-        fEntropy = sum(-c / len(column) * math.log2(c / len(column)) for c in cnts.values())
+        fEntropy = sum(-count / len(datColumn) * math.log2(count / len(datColumn)) for count in cnts.values())
         return fEntropy
     
     # entropy of the target variable
@@ -53,9 +53,7 @@ def calcID3(dataAttr, colAttr):
         # calculate entropy of the split data
         attrDataEntropy = sum(len(subset) / len(trgtVar) * id3EntropyCalc(subset) for subset in attrData)
         # update the best attribute if the split entropy is smaller
-        if attrDataEntropy < minEntropy:
-            minEntropy = attrDataEntropy
-            finalAtr = attr
+        minEntropy, finalAtr = (attrDataEntropy, attr) if attrDataEntropy < minEntropy else (minEntropy, finalAtr)
     # return the best attribute and the information gain
     infoGain = initEntropy - minEntropy
     return finalAtr, infoGain
@@ -67,12 +65,12 @@ def calcCart(dataAttr, colAttr):
 
     # calculates the Gini index of a given column using the formula
     # column: the column of data being analyzed
-    def giniIndexCalc(column):
+    def giniIndexCalc(datColumn):
         # initialize a dictionary to count the occurrences of each value in the input column
         cnts = {}
-        for val in column:
+        for val in datColumn:
             cnts[val] = cnts.get(val, 0) + 1
-        tCnt = len(column)
+        tCnt = len(datColumn)
         # compute the gini impurity value
         giniIndexVal = 1 - sum((count / tCnt) ** 2 for count in cnts.values())
         return giniIndexVal
@@ -91,9 +89,7 @@ def calcCart(dataAttr, colAttr):
             attrLabels = [dataAttr[-1][i] for i in attrVals]
             giniVar += len(attrLabels) / len(dataAttr[-1]) * giniIndexCalc(attrLabels)
         # update the best attribute if the split gini index is smaller
-        if giniVar < minGini:
-            minGini = giniVar
-            finalAttr = attr
+        minGini, finalAttr = (giniVar, attr) if giniVar < minGini else (minGini, finalAttr)
     # return the best attribute and the gini index
     return finalAttr, minGini
     
@@ -238,7 +234,7 @@ plt.hist(plotTestID3, density=1, bins=15, color='blue', alpha=0.5)
 plt.title("Decision Tree using With ID3 Algorithm On Testing Data")
 plt.ylabel("Accuracy Frequency")
 plt.xlabel("Accuracy")
-plt.axis([0.65, 1.1, 0, 30])
+plt.axis([0.55, 1.1, 0, 30])
 plt.show()
 
 # QE.1 Repeat the experiments Q2.1 to Q2.4, but now use the Gini criterion for node splitting, instead of the Information Gain criterion.
@@ -261,7 +257,7 @@ plt.hist(plotTestGini, density=1, bins=15, color='blue', alpha=0.5)
 plt.title("Decision Tree using Gini Algorithm On Testing Data")
 plt.ylabel("Accuracy Frequency")
 plt.xlabel("Accuracy")
-plt.axis([0.65, 1.1, 0, 30])
+plt.axis([0.55, 1.1, 0, 30])
 plt.show()
 
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------

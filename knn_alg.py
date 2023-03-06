@@ -11,7 +11,7 @@ dataReader = csv.reader(data)
 # irisData: list to hold the iris data
 irisData = []
 for row in dataReader:
-    irisData.append([float(row[0]), float(row[1]), float(row[2]), float(row[3]), row[4]])
+    irisData.append([float(val) if i < 4 else val for i, val in enumerate(row)])
 
 # split the data into training and testing sets
 # the training set will contain 80% of the data, the testing set will contain 20% of the data
@@ -30,11 +30,11 @@ def normalizedDataset(trainData, testData):
 
     # normalize a column of data
     # column: column to be normalized; resArr: resulting normalized array
-    def normalizeCol(column):
-        minVal = min(column)
-        maxVal = max(column)
+    def normalizeCol(datColumn):
+        minVal = min(datColumn)
+        maxVal = max(datColumn)
         # iterate through the list and normalize each value
-        resArr = [(val - minVal) / (maxVal - minVal) for val in column]
+        resArr = [(val - minVal) / (maxVal - minVal) for val in datColumn]
         return resArr, minVal, maxVal
     
     trainKnnNorm, testKnnNorm = [], []
@@ -94,11 +94,11 @@ def distanceCalc(testDataPt, trainDataPts):
 def knnAlgor(k, trainData, testData):
     predictedLables = []
     # extract the true labels for test data and store them in a separate list
-    correctLables = [column[-1] for column in testData]
+    correctLables = [datColumn[-1] for datColumn in testData]
     for datpt in testData:
         distArr = distanceCalc(datpt, trainData)
         # extract the labels of the k nearest neighbours
-        labelsArr = [column[1] for column in distArr[:k]]
+        labelsArr = [datColumn[1] for datColumn in distArr[:k]]
         # predict the label of the test data point based on the majority label of k nearest neighbours
         predictedLables.append(max(set(labelsArr), key=labelsArr.count))
     return predictedLables, correctLables
